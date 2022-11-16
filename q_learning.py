@@ -1,13 +1,10 @@
 import tensorflow as tf
 import numpy as np
 import random
-import pathlib
 import path
-from neural_network import DeepQNetwork
+from neural_network import NeuralNetwork
 from memory import Memory
 from game import Game
-from car import CarActions
-import tensorflow as tf
 
 class QLearning:
     def __init__(self, game: Game, memory_size, training_batch_size, learning_rate, gamma = 0.6, epsilon = 0.1) -> None:
@@ -47,7 +44,6 @@ class QLearning:
         self.memory.add((state, action, reward, next_state, terminated))
 
     def pretrain(self):
-        self.game.reset()
         state = self.game.get_state()
         for i in range(self.training_batch_size):
             # pick random movement
@@ -78,3 +74,25 @@ class QLearning:
         
         q_values = self.q_network.predict(state)
         return np.argmax(q_values[0])
+
+    def save(self, dir = None):
+        if not dir:
+            dir = 'episode_{}'.format(self.game.game_number)
+        # check if directory exists and remove all files if it does
+        if not (path.MODELS / dir).exists():
+            (path.MODELS / dir).mkdir()        
+        # save the model
+        self.q_network.save(path.MODELS / dir)
+        # save the memory
+        self.memory.save(path.MEMORY / (dir + '.csv'))
+
+    def load(self, dir):
+        # check directories
+        if not (path.MODELS / dir).exists():
+            raise FileExistsError("Directory for model doesn't exist.")
+        if not (path.MEMORY / (dir + '.csv')).exists():
+            raise FileNotFoundError("The memory storage file doesn't exist.")
+        
+        self.q_network = tf.keras.models.load_model(path.MODELS / dir)
+        self.target_network = tf.keras.models.load_model(path.MODELS / dir)
+        self.memory.load(path.MEMORY / (dir + '.csv'))
