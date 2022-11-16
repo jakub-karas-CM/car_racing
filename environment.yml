@@ -1,0 +1,10 @@
+name: qlearning
+channels:
+  - defaults
+dependencies:
+  - pip
+  - numpy
+  - pandas
+  - pip:
+    - pygame
+    - tensorflow
