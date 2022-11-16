@@ -1,0 +1,8 @@
+{
+    "max_velocity": 10,
+    "max_angular_velocity": 7,
+    "starting_position": [150, 500],
+    "starting_angle": 0,
+    "model": "red-car.png",
+    "model_scale": 0.7
+}
