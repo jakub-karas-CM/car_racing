@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 import random
 import path
-from neural_network import NeuralNetwork
 from memory import Memory
 from game import Game
 
@@ -12,7 +11,7 @@ class QLearning:
         self.game = game
         self.state_size = self.game.get_state_size()
         self.action_size = self.game.get_action_size()
-        self._optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         
         self.memory = Memory(memory_size)
         self.training_batch_size = training_batch_size
@@ -22,19 +21,19 @@ class QLearning:
         self.epsilon = epsilon
         
         # Build networks
-        self.q_network = self.build_network(self.state_size, self.action_size)
-        self.target_network = self.build_network(self.state_size, self.action_size)
+        self.q_network = self.build_network(self.state_size, self.action_size, self.optimizer)
+        self.target_network = self.build_network(self.state_size, self.action_size, self.optimizer)
         self.align_target_model()
 
         # Populate memory
         self.pretrain()
 
-    def build_network(self, state_size, action_size):
+    def build_network(self, state_size, action_size, optimizer):
         model = tf.keras.models.Sequential()
         model.add(tf.keras.layers.Dense(10, input_shape=(state_size, ), activation='relu'))
         model.add(tf.keras.layers.Dense(10, activation='relu'))
         model.add(tf.keras.layers.Dense(action_size, activation='linear'))        
-        model.compile(loss='mse', optimizer="Adam")
+        model.compile(loss='mse', optimizer=optimizer)
         return model
 
     def align_target_model(self):
@@ -66,6 +65,9 @@ class QLearning:
                 state = self.game.get_state()
             else:
                 state = next_state
+
+    def train(self):
+        pass
 
     def get_action(self, state):            
         self.memory.count()
