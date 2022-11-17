@@ -14,7 +14,12 @@ class Memory:
     def sample(self, batch_size):
         buffer_size = len(self.buffer)
         rnd_indeces = np.random.choice(np.arange(buffer_size), size=batch_size, replace=False)
-        return [self.buffer[i] for i in rnd_indeces]
+        states = np.concatenate([self.buffer[i][0] for i in rnd_indeces])
+        actions = [self.buffer[i][1] for i in rnd_indeces]
+        rewards = [self.buffer[i][2] for i in rnd_indeces]
+        next_states = np.concatenate([self.buffer[i][3] for i in rnd_indeces])
+        terminated = [self.buffer[i][4] for i in rnd_indeces]
+        return states, actions, rewards, next_states, np.array(terminated)
 
     def count(self):
         return len(self.buffer)
