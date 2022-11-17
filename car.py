@@ -13,7 +13,7 @@ class CarActions(enum.Enum):
     DO_NOTHING = 4
 
 class Car():
-    def __init__(self, max_velocity, rotation_velocity, start_position, starting_angle, img):
+    def __init__(self, max_velocity, acceleration, rotation_velocity, start_position, starting_angle, img):
         self.img = img
         self.width, self.height = self.img.get_width(), self.img.get_height()
         self.start_position = start_position
@@ -21,7 +21,7 @@ class Car():
         self.max_velocity = max_velocity
         self.max_reverse_velocity = -self.max_velocity / 2
         self.rotation_velocity = rotation_velocity
-        self.acceleration = 0.1
+        self.acceleration = acceleration
         self.vision_angles = [0, math.pi / 4, math.pi / 2, 3 * math.pi / 4, math.pi, 5 * math.pi / 4, 3 * math.pi / 2, 7 * math.pi / 4]
         self.vision_line_length = 400
         self.vision_lines = [0] * len(self.vision_angles)

@@ -1,5 +1,6 @@
 {
-    "max_velocity": 10,
+    "max_velocity": 17,
+    "acceleration": 0.3,
     "max_angular_velocity": 7,
     "starting_position": [1200, 830],
     "starting_angle": 85,
