@@ -9,7 +9,6 @@ from map import Map
 
 class Game():
     def __init__(self, path_to_map):
-        self.game_number = 1
         self.GRASS = scale_image(pg.image.load("imgs/grass.jpg"), 3)
         self.FINISH = pg.image.load("imgs/finish.png")
 
@@ -18,6 +17,7 @@ class Game():
         self.CAR = scale_image(pg.image.load(str(Path('imgs') / car_config['model'])), car_config['model_scale'])
         self.player = Car(
             car_config['max_velocity'],
+            car_config['acceleration'],
             car_config['max_angular_velocity'],
             car_config['starting_position'],
             car_config['starting_angle'],
@@ -35,7 +35,6 @@ class Game():
         self.WIDTH, self.HEIGHT = WIN_WIDTH, WIN_HEIGHT
         self.WIN = pg.display.set_mode((self.WIDTH, self.HEIGHT))
         pg.display.set_caption("Let's race!")
-        print("Game numero " + str(self.game_number))
 
     def move_player(self):
         keys = pg.key.get_pressed()
@@ -107,9 +106,7 @@ class Game():
 
     def reset(self):
         self.next_gate = 0
-        self.game_number += 1
         self.player.reset()
-        print("Game numero " + str(self.game_number))
 
     def draw(self, next, gates = False):
         for img, pos in self.images:
