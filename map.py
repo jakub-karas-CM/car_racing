@@ -18,7 +18,7 @@ class Wall(Line):
 
 class RewardGate(Line):
     def draw(self, window, colour = (190, 250, 0)):
-        pg.draw.line(window, colour, self.pixel1, self.pixel2)
+        pg.draw.line(window, colour, self.pixel1, self.pixel2, width = 5)
 
 class Map():
     def __init__(self, walls, gates):
