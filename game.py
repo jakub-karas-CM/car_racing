@@ -11,6 +11,10 @@ class Game():
     def __init__(self, path_to_map):
         self.GRASS = scale_image(pg.image.load("imgs/grass.jpg"), 3)
         self.FINISH = pg.image.load("imgs/finish.png")
+        self.images = [(self.GRASS, (0, 0)), (self.TRACK, (0, 0))]
+
+        self.WIDTH, self.HEIGHT = WIN_WIDTH, WIN_HEIGHT
+        self.WIN = pg.display.set_mode((self.WIDTH, self.HEIGHT))
 
         with (path_to_map / 'car.json').open() as fs:
             car_config = json.load(fs)
@@ -21,6 +25,7 @@ class Game():
             car_config['max_angular_velocity'],
             car_config['starting_position'],
             car_config['starting_angle'],
+            max(self.WIDTH, self.HEIGHT),
             self.CAR
         )
 
@@ -29,11 +34,6 @@ class Game():
         self.TRACK = pg.image.load(str(path_to_map / "track.png"))
         self.MAP = Map(walls, gates)
         self.next_gate = 0
-
-        self.images = [(self.GRASS, (0, 0)), (self.TRACK, (0, 0))]
-
-        self.WIDTH, self.HEIGHT = WIN_WIDTH, WIN_HEIGHT
-        self.WIN = pg.display.set_mode((self.WIDTH, self.HEIGHT))
         pg.display.set_caption("Let's race!")
 
     def move_player(self):

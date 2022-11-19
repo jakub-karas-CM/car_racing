@@ -17,7 +17,7 @@ class CarActions(enum.Enum):
     DO_NOTHING = 8
 
 class Car():
-    def __init__(self, max_velocity, acceleration, rotation_velocity, start_position, starting_angle, img):
+    def __init__(self, max_velocity, acceleration, rotation_velocity, start_position, starting_angle, vision_line_length, img):
         self.img = img
         self.width, self.height = self.img.get_width(), self.img.get_height()
         self.start_position = start_position
@@ -27,7 +27,7 @@ class Car():
         self.rotation_velocity = rotation_velocity
         self.acceleration = acceleration
         self.vision_angles = [0, math.pi / 4, math.pi / 2, 3 * math.pi / 4, math.pi, 5 * math.pi / 4, 3 * math.pi / 2, 7 * math.pi / 4]
-        self.vision_line_length = 400
+        self.vision_line_length = vision_line_length
         self.vision_lines = [0] * len(self.vision_angles)
         self.closest_seen_points = [None] * len(self.vision_angles)
         self.closest_seen_points_distances = np.array([self.vision_line_length] * len(self.vision_angles))
