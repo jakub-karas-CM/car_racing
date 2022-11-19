@@ -10,7 +10,11 @@ class CarActions(enum.Enum):
     ROTATE_RIGHT = 1
     FORWARD = 2
     BACKWARD = 3
-    DO_NOTHING = 4
+    LEFT_FORWARD = 4
+    RIGHT_FORWARD = 5
+    LEFT_BACKWARD = 6
+    RIGHT_BACKWARD = 7
+    DO_NOTHING = 8
 
 class Car():
     def __init__(self, max_velocity, acceleration, rotation_velocity, start_position, starting_angle, img):
@@ -19,7 +23,7 @@ class Car():
         self.start_position = start_position
         self.starting_angle = starting_angle
         self.max_velocity = max_velocity
-        self.max_reverse_velocity = -self.max_velocity / 2
+        self.max_reverse_velocity = 0 # -self.max_velocity / 2
         self.rotation_velocity = rotation_velocity
         self.acceleration = acceleration
         self.vision_angles = [0, math.pi / 4, math.pi / 2, 3 * math.pi / 4, math.pi, 5 * math.pi / 4, 3 * math.pi / 2, 7 * math.pi / 4]
@@ -48,9 +52,9 @@ class Car():
     
     def reduce_speed(self):
         if self.velocity < 0:
-            self.velocity = min(self.velocity + self.acceleration, 0)
+            self.velocity = min(self.velocity + self.acceleration / 2, 0)
         else:
-            self.velocity = max(self.velocity - self.acceleration, 0)
+            self.velocity = max(self.velocity - self.acceleration / 2, 0)
         self.move()
 
     def move(self):
@@ -70,6 +74,18 @@ class Car():
         elif action == CarActions.FORWARD.value:
             self.move_forward()
         elif action == CarActions.BACKWARD.value:
+            self.move_backward()
+        elif action == CarActions.LEFT_FORWARD.value:
+            self.rotate(left=True)
+            self.move_forward()
+        elif action == CarActions.RIGHT_FORWARD.value:
+            self.rotate(right=True)
+            self.move_forward()
+        elif action == CarActions.LEFT_BACKWARD.value:
+            self.rotate(left=True)
+            self.move_backward()
+        elif action == CarActions.RIGHT_BACKWARD.value:
+            self.rotate(right=True)
             self.move_backward()
         else:
             self.reduce_speed()
@@ -93,7 +109,7 @@ class Car():
         '''Return array of inputs of neural network.'''
         normlized_vision_distances = self.closest_seen_points_distances / self.vision_line_length
         normalized_forward_velocity = max(0, self.velocity / self.max_velocity)
-        normalized_backward_velocity = max(0, self.velocity / self. max_reverse_velocity)
+        normalized_backward_velocity = 0 # max(0, self.velocity / self. max_reverse_velocity)
         normalized_angle = self.angle / 360
         normalized_state = [* normlized_vision_distances, normalized_forward_velocity, normalized_backward_velocity, normalized_angle]
         return np.array(normalized_state)
