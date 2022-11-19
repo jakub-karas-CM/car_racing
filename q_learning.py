@@ -7,7 +7,7 @@ from memory import Memory
 from game import Game
 
 class QLearning:
-    def __init__(self, game: Game, memory_size, training_batch_size, learning_rate, gamma = 0.6, epsilon = 0.1) -> None:
+    def __init__(self, game: Game, memory_size, training_batch_size, steps_to_align_target, learning_rate, gamma = 0.6, min_epsilon = 0.1, max_epsilon = 1) -> None:
         # Initialize atributes
         self.game = game
         self.state_size = self.game.get_state_size()
@@ -19,9 +19,13 @@ class QLearning:
 
         # Initialize discount and exploration rate
         self.gamma = gamma
-        self.epsilon = epsilon
+        self.min_epsilon = min_epsilon
+        self.max_epsilon = max_epsilon
+        self.decay = 0
         
         # Build networks
+        self.step = 0
+        self.steps_to_align_target = steps_to_align_target
         self.q_network = self.build_network(self.state_size, self.action_size, self.optimizer)
         self.target_network = self.build_network(self.state_size, self.action_size, self.optimizer)
         self.align_target_model()
@@ -46,7 +50,7 @@ class QLearning:
     def pretrain(self):
         state = self.game.get_state()
         position = self.game.player.get_current_position()
-        for i in range(self.training_batch_size):
+        for _ in range(self.training_batch_size):
             # pick random movement
             action = random.randint(0, self.action_size - 1)
             # exercise the action
@@ -67,18 +71,16 @@ class QLearning:
                 state = next_state
                 position = next_position
 
-    def retrain_networks(self):
+    def retrain_q_network(self):
         # get training batch
         states, actions, rewards, next_states, terminated = self.memory.sample(self.training_batch_size)
         # retrain network for each experience (this might be cause of instabilities in training, if so, consider training on whole minibatch)
-        targets = self.q_network.predict(states)
-        correct_targets = self.target_network.predict(next_states)
+        targets = self.q_network.predict(states, verbose=0)
+        correct_targets = self.target_network.predict(next_states, verbose=0)
         correct_targets = np.amax(correct_targets, axis = 1) * (1 - terminated)
         for i in range(len(terminated)):
             targets[i][actions[i]] = rewards[i] + self.gamma * correct_targets[i]
-
         self.q_network.fit(states, targets, epochs=1, verbose=0)
-        self.align_target_model()
 
     def train(self, training_episodes, max_steps, fps = 60):
         run = True
@@ -89,6 +91,7 @@ class QLearning:
             state = self.game.get_state()
             position = self.game.player.get_current_position()
             for _ in range(max_steps):
+                self.step += 1
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         run = False
@@ -106,39 +109,48 @@ class QLearning:
                 reward = self.get_reward(position, next_position)
                 # store the experience in memory                
                 self.memory.add(state, action, reward, next_state, self.game.is_episode_finished())
+                # retrain Q Network
+                self.retrain_q_network()
                 # get ready for next move
                 if self.game.is_episode_finished():
+                    self.align_target_model()
                     break
                 else:
+                    if self.step >= self.steps_to_align_target:
+                        self.step = 0
+                        self.align_target_model()
                     state = next_state
                     position = next_position
             if not run:
                 break
 
-            self.retrain_networks()
-            self.save(f"episode_{episode}")
+            if episode % 10 == 0 and episode % 15 != 0:
+                self.save(f"episode_{episode}", memory=False)
+            
+            if episode % 10 != 0 and episode % 15 == 0:
+                self.save(f"episode_{episode}", memory=True)
+
             print(f"Episode {episode} is done.")
 
     def get_action(self, state):            
         self.memory.count()
-        if np.random.rand() <= self.epsilon:
+        if np.random.rand() <= self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-0.0001 * self.decay):
                 return random.randint(0, self.action_size - 1)
         
+        self.decay += 1
         q_values = self.q_network.predict(state, verbose=0)
         return np.argmax(q_values[0])
 
     def get_reward(self, position, next_position):
         reward = -1 # initialize for the case when nothing particulary interesting happened
         if self.game.gate_collision():
-            reward = 50
+            reward = 10
         if self.game.wall_collision():
             reward += -100
-        if position[0] == next_position[0] and position[1] == next_position[1]:
-            reward -= 10
         
         return reward
 
-    def save(self, dir = None):
+    def save(self, dir = None, memory = True):
         if not dir:
             dir = 'episode_{}'.format(self.game.game_number)
         # check if directory exists and remove all files if it does
@@ -147,7 +159,8 @@ class QLearning:
         # save the model
         self.q_network.save(path.MODELS / dir)
         # save the memory
-        self.memory.save(path.MEMORY / (dir + '.csv'))
+        if memory:
+            self.memory.save(path.MEMORY / (dir + '.csv'))
 
     def load(self, dir):
         # check directories
