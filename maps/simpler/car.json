@@ -2,7 +2,7 @@
     "max_velocity": 17,
     "acceleration": 0.3,
     "max_angular_velocity": 7,
-    "starting_position": [1480, 800],
+    "starting_position": [1430, 800],
     "starting_angle": 93,
     "model": "red-car.png",
     "model_scale": 0.7
