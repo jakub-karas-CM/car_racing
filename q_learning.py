@@ -58,7 +58,7 @@ class QLearning:
             # find out what happened
             next_state = self.game.get_state()
             next_position = self.game.player.get_current_position()
-            reward = self.get_reward(position, next_position)
+            reward = self.get_reward(state[0][-1], state[0][-4])
             # store the experience in memory
             self.memory.add(state, action, reward, next_state, self.game.is_episode_finished())
 
@@ -74,22 +74,25 @@ class QLearning:
     def retrain_q_network(self):
         # get training batch
         states, actions, rewards, next_states, terminated = self.memory.sample(self.training_batch_size)
-        # retrain network for each experience (this might be cause of instabilities in training, if so, consider training on whole minibatch)
-        targets = self.q_network.predict(states, verbose=0)
-        correct_targets = self.target_network.predict(next_states, verbose=0)
-        correct_targets = np.amax(correct_targets, axis = 1) * (1 - terminated)
-        for i in range(len(terminated)):
-            targets[i][actions[i]] = rewards[i] + self.gamma * correct_targets[i]
+        # retrain network
+        q_eval = self.q_network.predict(states, verbose=0)
+        q_next = self.target_network.predict(next_states, verbose=0)
+        
+        targets = q_eval.copy()
+        batch_indices = np.arange(self.training_batch_size)
+        targets[batch_indices, actions] = np.array(rewards) + self.gamma * np.amax(q_next, axis=1) * (1 - np.array(terminated))
         self.q_network.fit(states, targets, epochs=1, verbose=0)
 
     def train(self, training_episodes, max_steps, fps = 60):
         run = True
         clock = pg.time.Clock()
-
+        scores = []
+        epsilones = []
         for episode in range(training_episodes):
             self.game.reset()
             state = self.game.get_state()
             position = self.game.player.get_current_position()
+            score = 0
             for _ in range(max_steps):
                 self.step += 1
                 for event in pg.event.get():
@@ -98,7 +101,6 @@ class QLearning:
                         break
                 clock.tick(fps)
 
-                self.game.draw(self.game.MAP.gates[self.game.next_gate], True)
                 # generate best action
                 action = self.get_action(state)
                 # exercise the action
@@ -106,9 +108,12 @@ class QLearning:
                 # find out what happened
                 next_state = self.game.get_state()
                 next_position = self.game.player.get_current_position()
-                reward = self.get_reward(position, next_position)
+                reward = self.get_reward(state[0][-1], state[0][-4])
+                score += reward
                 # store the experience in memory                
                 self.memory.add(state, action, reward, next_state, self.game.is_episode_finished())
+                # render window
+                self.game.draw(self.game.MAP.gates[self.game.next_gate], True, reward)
                 # retrain Q Network
                 self.retrain_q_network()
                 # get ready for next move
@@ -124,29 +129,35 @@ class QLearning:
             if not run:
                 break
 
-            if episode % 10 == 0 and episode % 15 != 0:
+            epsilones.append(self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay))
+            scores.append(score)
+
+            if episode % 20 == 0 and episode % 1500 != 0:
                 self.save(f"episode_{episode}", memory=False)
             
-            if episode % 10 != 0 and episode % 15 == 0:
+            if episode % 20 != 0 and episode % 1500 == 0:
                 self.save(f"episode_{episode}", memory=True)
 
-            print(f"Episode {episode} is done.")
+            print(f"Episode {episode} is done. Score: {score}, avg score: {np.mean(scores[max(0, episode - 100):(episode+1)])}")
 
     def get_action(self, state):            
         self.memory.count()
-        if np.random.rand() <= self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-0.0001 * self.decay):
+        if np.random.rand() <= self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay):
                 return random.randint(0, self.action_size - 1)
         
         self.decay += 1
         q_values = self.q_network.predict(state, verbose=0)
         return np.argmax(q_values[0])
 
-    def get_reward(self, position, next_position):
-        reward = -1 # initialize for the case when nothing particulary interesting happened
+    def get_reward(self, relative_distance_to_reward, relative_speed):
+        collistion_punishment = -100
+        gate_reward = -collistion_punishment / 10
+
+        reward = -gate_reward *  (relative_distance_to_reward) / 1000
         if self.game.gate_collision():
-            reward = 10
+            reward = gate_reward
         if self.game.wall_collision():
-            reward += -100
+            reward = collistion_punishment
         
         return reward
 
@@ -162,13 +173,14 @@ class QLearning:
         if memory:
             self.memory.save(path.MEMORY / (dir + '.csv'))
 
-    def load(self, dir):
+    def load(self, dir, model_only = False):
         # check directories
         if not (path.MODELS / dir).exists():
             raise FileExistsError("Directory for model doesn't exist.")
-        if not (path.MEMORY / (dir + '.csv')).exists():
+        if not (path.MEMORY / (dir + '.csv')).exists() and not model_only:
             raise FileNotFoundError("The memory storage file doesn't exist.")
         
         self.q_network = tf.keras.models.load_model(path.MODELS / dir)
         self.target_network = tf.keras.models.load_model(path.MODELS / dir)
-        self.memory.load(path.MEMORY / (dir + '.csv'))
+        if not model_only:
+            self.memory.load(path.MEMORY / (dir + '.csv'))
