@@ -9,6 +9,7 @@ from map import Map
 
 class Game():
     def __init__(self, path_to_map):
+        pg.init()
         self.GRASS = scale_image(pg.image.load("imgs/grass.jpg"), 3)
         self.FINISH = pg.image.load("imgs/finish.png")
 
@@ -39,23 +40,30 @@ class Game():
 
     def move_player(self):
         keys = pg.key.get_pressed()
+        action = -1
         moved = False
 
         if keys[pg.K_a] or keys[pg.K_LEFT]:
+            action = CarActions.ROTATE_LEFT.value
             self.player.move_with_action(CarActions.ROTATE_LEFT.value)
 
         if keys[pg.K_d] or keys[pg.K_RIGHT]:
+            action = CarActions.ROTATE_RIGHT.value
             self.player.move_with_action(CarActions.ROTATE_RIGHT.value)
         
         if keys[pg.K_w] or keys[pg.K_UP]:
             moved = True
+            action = CarActions.FORWARD.value
             self.player.move_with_action(CarActions.FORWARD.value)
         
         if keys[pg.K_s] or keys[pg.K_DOWN]:
             moved = True
+            action = CarActions.BACKWARD.value
             self.player.move_with_action(CarActions.BACKWARD.value)
 
         if not moved:
+            if action == -1:
+                action = CarActions.DO_NOTHING.value
             self.player.move_with_action(CarActions.DO_NOTHING.value)
         self.update_closest_seen_points()
 
@@ -87,7 +95,7 @@ class Game():
     def get_state(self):
         car_state = self.player.get_normalized_state()
         normalized_distance_to_reward = self.distance_to_reward() / self.MAP.distances_between_gates[self.next_gate]
-        return np.array([[*car_state, normalized_distance_to_reward], ])
+        return np.array([[*car_state, normalized_distance_to_reward]])
 
     def get_state_size(self):
         return self.get_state().shape[1]
@@ -98,6 +106,8 @@ class Game():
     def gate_collision(self):
         if self.player.check_gate_hit(self.MAP.gates[self.next_gate]):
             self.next_gate = (self.next_gate + 1) % len(self.MAP.gates)
+            return True
+        return False
 
     def make_action(self, action):
         self.player.move_with_action(action)
@@ -109,9 +119,15 @@ class Game():
         self.next_gate = 0
         self.player.reset()
 
-    def draw(self, next, gates = False):
+    def draw(self, next, gates = False, reward = None):
         for img, pos in self.images:
             self.WIN.blit(img, pos)
         self.MAP.draw(self.WIN, next, gates=gates)
         self.player.draw(self.WIN)
+        if reward:            
+            font = pg.font.SysFont('Arial', 20)
+            text = font.render(f"Reward: {reward}", True, (255, 255, 255), (0, 255, 0))
+            rect = text.get_rect()
+            rect.topleft = (10, 10)
+            self.WIN.blit(text, rect)
         pg.display.update()    
