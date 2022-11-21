@@ -26,14 +26,15 @@ class QLearning:
         # Build networks
         self.step = 0
         self.steps_to_align_target = steps_to_align_target
-        self.q_network = self.build_network(self.state_size, self.action_size, self.optimizer)
-        self.target_network = self.build_network(self.state_size, self.action_size, self.optimizer)
+        self.q_network = QLearning.build_network(self.state_size, self.action_size, self.optimizer)
+        self.target_network = QLearning.build_network(self.state_size, self.action_size, self.optimizer)
         self.align_target_model()
 
         # Populate memory
         self.pretrain()
 
-    def build_network(self, state_size, action_size, optimizer):
+    @staticmethod
+    def build_network(state_size, action_size, optimizer):
         model = tf.keras.models.Sequential()
         model.add(tf.keras.layers.Dense(10, input_shape=(state_size, ), activation='relu'))
         model.add(tf.keras.layers.Dense(10, activation='relu'))
