@@ -119,11 +119,11 @@ class Game():
         self.next_gate = 0
         self.player.reset()
 
-    def draw(self, next, gates = False, reward = None):
+    def draw(self, next, gates = False, reward = None, vision = False):
         for img, pos in self.images:
             self.WIN.blit(img, pos)
         self.MAP.draw(self.WIN, next, gates=gates)
-        self.player.draw(self.WIN)
+        self.player.draw(self.WIN, vision)
         if reward:            
             font = pg.font.SysFont('Arial', 20)
             text = font.render(f"Reward: {reward}", True, (255, 255, 255), (0, 255, 0))

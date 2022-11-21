@@ -113,7 +113,7 @@ class QLearning:
                 # store the experience in memory                
                 self.memory.add(state, action, reward, next_state, self.game.is_episode_finished())
                 # render window
-                self.game.draw(self.game.MAP.gates[self.game.next_gate], True, reward)
+                self.game.draw(self.game.MAP.gates[self.game.next_gate], True, reward, False)
                 # retrain Q Network
                 self.retrain_q_network()
                 # get ready for next move
