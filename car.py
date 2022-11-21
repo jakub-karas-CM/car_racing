@@ -144,12 +144,13 @@ class Car():
         self.velocity = 0
         self.update_vision_lines()
 
-    def draw(self, window, center = False):
+    def draw(self, window, vision = False, center = False):
         rotate_image(window, self.img, (self.x, self.y), self.angle)
         if center:
             pg.draw.circle(window, (255, 255, 255), self.get_current_position(), 4)
-        for l in self.vision_lines:
-            pg.draw.line(window, (0,255, 255), l.pixel1, l.pixel2, width = 2)
-        for p in self.closest_seen_points:
-            if p is not None:
-                pg.draw.circle(window, (0, 255, 255), p, 4)
+        if vision:
+            for p in self.closest_seen_points:
+                for l in self.vision_lines:
+                    pg.draw.line(window, (0,255, 255), l.pixel1, l.pixel2, width = 2)
+                if p is not None:
+                    pg.draw.circle(window, (0, 255, 255), p, 4)
