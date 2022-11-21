@@ -66,6 +66,7 @@ class Game():
                 action = CarActions.DO_NOTHING.value
             self.player.move_with_action(CarActions.DO_NOTHING.value)
         self.update_closest_seen_points()
+        return action
 
     def distance_to_reward(self):
         car_position = self.player.get_current_front()
