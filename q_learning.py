@@ -106,6 +106,9 @@ class QLearning:
                     reward += self.get_reward(state[0][-1], state[0][-4])
                     # render window
                     self.game.draw(self.game.MAP.gates[self.game.next_gate], True, reward, False)
+                    # check for boundary crossing
+                    if self.game.is_episode_finished():
+                        break
                 # find out what happened
                 next_state = self.game.get_state()
                 score += reward
@@ -115,12 +118,12 @@ class QLearning:
                 self.retrain_q_network()
                 # get ready for next move
                 if self.game.is_episode_finished():
-                    self.align_target_model()
                     break
                 else:
                     if self.step >= self.steps_to_align_target:
                         self.step = 0
                         self.align_target_model()
+                        print("Target network aligned.")
                     state = next_state
             if not run:
                 break
