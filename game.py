@@ -25,7 +25,7 @@ class Game():
             car_config['max_angular_velocity'],
             car_config['starting_position'],
             car_config['starting_angle'],
-            max(self.WIDTH, self.HEIGHT),
+            min(self.WIDTH, self.HEIGHT) / 4,
             self.CAR
         )
 

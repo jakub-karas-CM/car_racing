@@ -50,7 +50,6 @@ class QLearning:
 
     def pretrain(self):
         state = self.game.get_state()
-        position = self.game.player.get_current_position()
         for _ in range(self.training_batch_size):
             # pick random movement
             action = random.randint(0, self.action_size - 1)
@@ -58,7 +57,6 @@ class QLearning:
             self.game.make_action(action)
             # find out what happened
             next_state = self.game.get_state()
-            next_position = self.game.player.get_current_position()
             reward = self.get_reward(state[0][-1], state[0][-4])
             # store the experience in memory
             self.memory.add(state, action, reward, next_state, self.game.is_episode_finished())
@@ -67,10 +65,8 @@ class QLearning:
             if self.game.is_episode_finished():
                 self.game.reset()
                 state = self.game.get_state()
-                position = self.game.player.get_current_position()
             else:
                 state = next_state
-                position = next_position
 
     def retrain_q_network(self):
         # get training batch
@@ -84,7 +80,7 @@ class QLearning:
         targets[batch_indices, actions] = np.array(rewards) + self.gamma * np.amax(q_next, axis=1) * (1 - np.array(terminated))
         self.q_network.fit(states, targets, epochs=1, verbose=0)
 
-    def train(self, training_episodes, max_steps, fps = 60):
+    def train(self, training_episodes, max_steps, policy_steps, fps = 60):
         run = True
         clock = pg.time.Clock()
         scores = []
@@ -92,7 +88,6 @@ class QLearning:
         for episode in range(training_episodes):
             self.game.reset()
             state = self.game.get_state()
-            position = self.game.player.get_current_position()
             score = 0
             for _ in range(max_steps):
                 self.step += 1
@@ -100,21 +95,22 @@ class QLearning:
                     if event.type == pg.QUIT:
                         run = False
                         break
-                clock.tick(fps)
 
                 # generate best action
                 action = self.get_action(state)
-                # exercise the action
-                self.game.make_action(action)
+                reward = 0
+                for _ in range(policy_steps):                    
+                    clock.tick(fps)
+                    # exercise the action n times
+                    self.game.make_action(action)
+                    reward += self.get_reward(state[0][-1], state[0][-4])
+                    # render window
+                    self.game.draw(self.game.MAP.gates[self.game.next_gate], True, reward, False)
                 # find out what happened
                 next_state = self.game.get_state()
-                next_position = self.game.player.get_current_position()
-                reward = self.get_reward(state[0][-1], state[0][-4])
                 score += reward
                 # store the experience in memory                
                 self.memory.add(state, action, reward, next_state, self.game.is_episode_finished())
-                # render window
-                self.game.draw(self.game.MAP.gates[self.game.next_gate], True, reward, False)
                 # retrain Q Network
                 self.retrain_q_network()
                 # get ready for next move
@@ -126,7 +122,6 @@ class QLearning:
                         self.step = 0
                         self.align_target_model()
                     state = next_state
-                    position = next_position
             if not run:
                 break
 
