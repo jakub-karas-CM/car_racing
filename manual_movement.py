@@ -16,10 +16,10 @@ def manual_movement(map):
         
         clock.tick(FPS)
 
-        state = game.get_state()
-        action = game.move_player()
+        game.get_state()
+        game.move_player()
 
-        game.draw(game.MAP.gates[game.next_gate], True, True)
+        game.draw(game.MAP.gates[game.next_gate], True, None, True)
                 
         # print((state, action))
         if game.wall_collision():
