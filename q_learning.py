@@ -152,7 +152,7 @@ class QLearning:
         collistion_punishment = -100
         gate_reward = -collistion_punishment / 10
 
-        reward = -gate_reward *  (relative_distance_to_reward) / 1000
+        reward = -gate_reward *  (relative_distance_to_reward) / 10
         if self.game.gate_collision():
             reward = gate_reward
         if self.game.wall_collision():
