@@ -5,9 +5,10 @@ import random
 import path
 from memory import Memory
 from game import Game
+from car import CarActions
 
 class QLearning:
-    def __init__(self, game: Game, memory_size, training_batch_size, steps_to_align_target, learning_rate, gamma, min_epsilon = 0.1, max_epsilon = 1) -> None:
+    def __init__(self, game: Game, memory_size, training_batch_size, pretrain_size, steps_to_align_target, learning_rate, gamma, min_epsilon = 0.1, max_epsilon = 1) -> None:
         # Initialize atributes
         self.game = game
         self.state_size = self.game.get_state_size()
@@ -31,6 +32,7 @@ class QLearning:
         self.align_target_model()
 
         # Populate memory
+        self.pretrain_size = pretrain_size
         self.pretrain()
 
     @staticmethod
@@ -50,7 +52,7 @@ class QLearning:
 
     def pretrain(self):
         state = self.game.get_state()
-        for _ in range(self.training_batch_size):
+        for _ in range(self.pretrain_size):
             # pick random movement
             action = random.randint(0, self.action_size - 1)
             # exercise the action
@@ -105,7 +107,8 @@ class QLearning:
                     self.game.make_action(action)
                     reward += self.get_reward(state[0][-1], state[0][-4])
                     # render window
-                    self.game.draw(self.game.MAP.gates[self.game.next_gate], True, reward, False)
+                    text = reward, action
+                    self.game.draw(self.game.MAP.gates[self.game.next_gate], True, text, False)
                     # check for boundary crossing
                     if self.game.is_episode_finished():
                         break
@@ -155,7 +158,7 @@ class QLearning:
         collistion_punishment = -100
         gate_reward = -collistion_punishment / 10
 
-        reward = -gate_reward *  (relative_distance_to_reward) / 10
+        reward = -gate_reward * (relative_distance_to_reward) / 40 # + gate_reward * relative_speed
         if self.game.gate_collision():
             reward = gate_reward
         if self.game.wall_collision():
