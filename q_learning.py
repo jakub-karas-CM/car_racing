@@ -7,7 +7,7 @@ from memory import Memory
 from game import Game
 
 class QLearning:
-    def __init__(self, game: Game, memory_size, training_batch_size, steps_to_align_target, learning_rate, gamma = 0.6, min_epsilon = 0.1, max_epsilon = 1) -> None:
+    def __init__(self, game: Game, memory_size, training_batch_size, steps_to_align_target, learning_rate, gamma, min_epsilon = 0.1, max_epsilon = 1) -> None:
         # Initialize atributes
         self.game = game
         self.state_size = self.game.get_state_size()
