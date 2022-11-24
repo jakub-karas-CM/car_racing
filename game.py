@@ -38,33 +38,37 @@ class Game():
         self.images = [(self.GRASS, (0, 0)), (self.TRACK, (0, 0))]
         pg.display.set_caption("Let's race!")
 
-    def move_player(self):
+    def move_player(self, manual = None):
         keys = pg.key.get_pressed()
         action = -1
         moved = False
+        if not manual:
+            if keys[pg.K_a] or keys[pg.K_LEFT]:
+                action = CarActions.ROTATE_LEFT.value
+                self.player.move_with_action(CarActions.ROTATE_LEFT.value)
 
-        if keys[pg.K_a] or keys[pg.K_LEFT]:
-            action = CarActions.ROTATE_LEFT.value
-            self.player.move_with_action(CarActions.ROTATE_LEFT.value)
+            if keys[pg.K_d] or keys[pg.K_RIGHT]:
+                action = CarActions.ROTATE_RIGHT.value
+                self.player.move_with_action(CarActions.ROTATE_RIGHT.value)
+            
+            if keys[pg.K_w] or keys[pg.K_UP]:
+                moved = True
+                action = CarActions.FORWARD.value
+                self.player.move_with_action(CarActions.FORWARD.value)
+            
+            if keys[pg.K_s] or keys[pg.K_DOWN]:
+                moved = True
+                action = CarActions.BACKWARD.value
+                self.player.move_with_action(CarActions.BACKWARD.value)
 
-        if keys[pg.K_d] or keys[pg.K_RIGHT]:
-            action = CarActions.ROTATE_RIGHT.value
-            self.player.move_with_action(CarActions.ROTATE_RIGHT.value)
-        
-        if keys[pg.K_w] or keys[pg.K_UP]:
-            moved = True
-            action = CarActions.FORWARD.value
-            self.player.move_with_action(CarActions.FORWARD.value)
-        
-        if keys[pg.K_s] or keys[pg.K_DOWN]:
-            moved = True
-            action = CarActions.BACKWARD.value
-            self.player.move_with_action(CarActions.BACKWARD.value)
+            if not moved:
+                if action == -1:
+                    action = CarActions.DO_NOTHING.value
+                self.player.move_with_action(CarActions.DO_NOTHING.value)
+        else:
+            action = manual
+            self.player.move_with_action(manual)
 
-        if not moved:
-            if action == -1:
-                action = CarActions.DO_NOTHING.value
-            self.player.move_with_action(CarActions.DO_NOTHING.value)
         self.update_closest_seen_points()
         return action
 
