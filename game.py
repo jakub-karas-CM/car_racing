@@ -25,7 +25,7 @@ class Game():
             car_config['max_angular_velocity'],
             car_config['starting_position'],
             car_config['starting_angle'],
-            min(self.WIDTH, self.HEIGHT) / 4,
+            min(self.WIDTH, self.HEIGHT) / 2,
             self.CAR
         )
 
@@ -124,14 +124,14 @@ class Game():
         self.next_gate = 0
         self.player.reset()
 
-    def draw(self, next, gates = False, reward = None, vision = False):
+    def draw(self, next, gates = False, text = None, vision = False):
         for img, pos in self.images:
             self.WIN.blit(img, pos)
         self.MAP.draw(self.WIN, next, gates=gates)
         self.player.draw(self.WIN, vision)
-        if reward:            
+        if text:            
             font = pg.font.SysFont('Arial', 20)
-            text = font.render(f"Reward: {reward}", True, (255, 255, 255), (0, 255, 0))
+            text = font.render(f"Reward: {text[0]}\nAction: {text[1]}", True, (255, 255, 255), (0, 255, 0))
             rect = text.get_rect()
             rect.topleft = (10, 10)
             self.WIN.blit(text, rect)
