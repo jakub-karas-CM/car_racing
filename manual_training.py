@@ -5,7 +5,7 @@ from q_learning import QLearning
 from memory import Memory
 import path
 
-def manual_training():
+def manual_training(direction):
     game = Game(path.MAPS / 'simpler')
     clock = pg.time.Clock()
     FPS = 60
@@ -22,7 +22,7 @@ def manual_training():
         clock.tick(FPS)
 
         state = game.get_state()
-        action = game.move_player()
+        action = game.move_player(direction)
         data.add(state, action, 0, 0, False)
 
         game.draw(game.MAP.gates[game.next_gate], True, True)
