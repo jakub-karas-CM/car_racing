@@ -6,15 +6,15 @@ from map import Line
 from utils import rotate_image, lines_collided
 
 class CarActions(enum.Enum):
-    ROTATE_LEFT = 0
-    ROTATE_RIGHT = 1
-    FORWARD = 2
-    BACKWARD = 3
-    LEFT_FORWARD = 4
-    RIGHT_FORWARD = 5
-    LEFT_BACKWARD = 6
-    RIGHT_BACKWARD = 7
-    DO_NOTHING = 8
+    FORWARD = 0
+    BACKWARD = 1
+    LEFT_FORWARD = 2
+    RIGHT_FORWARD = 3
+    LEFT_BACKWARD = 4
+    RIGHT_BACKWARD = 5
+    # DO_NOTHING = 6
+    # ROTATE_LEFT = 7
+    # ROTATE_RIGHT = 8
 
 class Car():
     def __init__(self, max_velocity, acceleration, rotation_velocity, start_position, starting_angle, vision_line_length, img):
@@ -23,7 +23,7 @@ class Car():
         self.start_position = start_position
         self.starting_angle = starting_angle
         self.max_velocity = max_velocity
-        self.max_reverse_velocity = 0 # -self.max_velocity / 2
+        self.max_reverse_velocity = -self.max_velocity / 2
         self.rotation_velocity = rotation_velocity
         self.acceleration = acceleration
         self.vision_angles = [0, math.pi / 4, math.pi / 2, 3 * math.pi / 4, math.pi, 5 * math.pi / 4, 3 * math.pi / 2, 7 * math.pi / 4]
@@ -34,7 +34,7 @@ class Car():
         self.reset()
 
     def action_size(self):
-        return len([1 for x in CarActions])
+        return max([x.value for x in CarActions]) + 1
         
     def rotate(self, left = False, right = False):
         if left:
@@ -67,11 +67,7 @@ class Car():
         self.update_vision_lines()
 
     def move_with_action(self, action):
-        if action == CarActions.ROTATE_LEFT.value:
-            self.rotate(left=True)
-        elif action == CarActions.ROTATE_RIGHT.value:
-            self.rotate(right=True)
-        elif action == CarActions.FORWARD.value:
+        if action == CarActions.FORWARD.value:
             self.move_forward()
         elif action == CarActions.BACKWARD.value:
             self.move_backward()
@@ -87,6 +83,10 @@ class Car():
         elif action == CarActions.RIGHT_BACKWARD.value:
             self.rotate(right=True)
             self.move_backward()
+        # elif action == CarActions.ROTATE_LEFT.value:
+        #     self.rotate(left=True)
+        # elif action == CarActions.ROTATE_RIGHT.value:
+        #     self.rotate(right=True)
         else:
             self.reduce_speed()
         
@@ -94,8 +94,12 @@ class Car():
         return np.array([self.x + self.width / 2, self.y + self.height / 2])
         
     def get_current_front(self):
-        length = self.width / 2
-        return np.array([self.x + length, self.y])
+        length = self.height / 2
+        radians = math.radians(self.angle + 90)
+        x, y = self.get_current_position()
+        x += length * np.cos(radians)
+        y -= length * np.sin(radians)
+        return np.array([x, y])
 
     def update_vision_lines(self):
         x, y = self.get_current_position()
@@ -109,7 +113,7 @@ class Car():
         '''Return array of inputs of neural network.'''
         normlized_vision_distances = self.closest_seen_points_distances / self.vision_line_length
         normalized_forward_velocity = max(0, self.velocity / self.max_velocity)
-        normalized_backward_velocity = 0 # max(0, self.velocity / self. max_reverse_velocity)
+        normalized_backward_velocity = max(0, self.velocity / self.max_reverse_velocity) if self.max_reverse_velocity != 0 else 0
         normalized_angle = self.angle / 360
         normalized_state = [* normlized_vision_distances, normalized_forward_velocity, normalized_backward_velocity, normalized_angle]
         return np.array(normalized_state)
@@ -146,11 +150,11 @@ class Car():
 
     def draw(self, window, vision = False, center = False):
         rotate_image(window, self.img, (self.x, self.y), self.angle)
-        if center:
-            pg.draw.circle(window, (255, 255, 255), self.get_current_position(), 4)
         if vision:
             for p in self.closest_seen_points:
                 for l in self.vision_lines:
                     pg.draw.line(window, (0,255, 255), l.pixel1, l.pixel2, width = 2)
                 if p is not None:
                     pg.draw.circle(window, (0, 255, 255), p, 4)
+        if center:
+            pg.draw.circle(window, (255, 255, 255), self.get_current_position(), 4)
