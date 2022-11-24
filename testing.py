@@ -3,10 +3,12 @@ from game import Game
 from q_learning import QLearning
 import path
 
-def testing():
+def testing(dir):
     game = Game(path.MAPS / 'simpler')
     agent = QLearning(game, 1, 1, 2, 0.6)
-    agent.load('go_forward', True)
+    agent.load(dir, True)
+    agent.min_epsilon = 0
+    agent.max_epsilon = 0
     clock = pg.time.Clock()
     FPS = 60
 
