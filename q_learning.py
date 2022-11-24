@@ -139,12 +139,15 @@ class QLearning:
 
             print(f"Episode {episode} is done. Score: {score}, avg score: {np.mean(scores[max(0, episode - 100):(episode+1)])}")
 
+    def run_episode():
+        pass
+
     def get_action(self, state):            
         self.memory.count()
+        self.decay += 1
         if np.random.rand() <= self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay):
                 return random.randint(0, self.action_size - 1)
         
-        self.decay += 1
         q_values = self.q_network.predict(state, verbose=0)
         return np.argmax(q_values[0])
 
