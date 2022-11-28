@@ -9,7 +9,7 @@ class Memory:
         self.counter = 0 # a counter of written experiences
         # setup buffers
         self.states = np.zeros((self.max_size, self.state_size))
-        self.actions = np.zeros(self.max_size)
+        self.actions = np.zeros(self.max_size, dtype=np.int32)
         self.rewards = np.zeros(self.max_size)
         self.next_states = np.zeros((self.max_size, self.state_size))
         self.terminated = np.zeros(self.max_size, dtype=bool)
