@@ -15,7 +15,7 @@ class QLearning:
         self.action_size = self.game.get_action_size()
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         
-        self.memory = Memory(memory_size)
+        self.memory = Memory(memory_size, self.state_size)
         self.training_batch_size = training_batch_size
 
         # Initialize discount and exploration rate
@@ -52,6 +52,7 @@ class QLearning:
 
     def pretrain(self):
         state = self.game.get_state()
+        position = self.game.player.get_current_position()
         for _ in range(self.pretrain_size):
             # pick random movement
             action = random.randint(0, self.action_size - 1)
@@ -59,7 +60,8 @@ class QLearning:
             self.game.make_action(action)
             # find out what happened
             next_state = self.game.get_state()
-            reward = self.get_reward(state[0][-1], state[0][-4])
+            next_position = self.game.player.get_current_position()
+            reward = self.get_reward(state[0][-1], position, next_position, state[0][-4])
             # store the experience in memory
             self.memory.add(state, action, reward, next_state, self.game.is_episode_finished())
 
@@ -67,8 +69,10 @@ class QLearning:
             if self.game.is_episode_finished():
                 self.game.reset()
                 state = self.game.get_state()
+                position = self.game.player.get_current_position()
             else:
                 state = next_state
+                position = next_position
 
     def retrain_q_network(self):
         # get training batch
@@ -79,7 +83,7 @@ class QLearning:
         
         targets = q_eval.copy()
         batch_indices = np.arange(self.training_batch_size)
-        targets[batch_indices, actions] = np.array(rewards) + self.gamma * np.amax(q_next, axis=1) * (1 - np.array(terminated))
+        targets[batch_indices, actions] = rewards + self.gamma * np.amax(q_next, axis=1) * (1 - terminated)
         self.q_network.fit(states, targets, epochs=1, verbose=0)
 
     def train(self, training_episodes, max_steps, policy_steps, fps = 60):
@@ -90,6 +94,7 @@ class QLearning:
         for episode in range(training_episodes):
             self.game.reset()
             state = self.game.get_state()
+            position = self.game.player.get_current_position()
             score = 0
             for _ in range(max_steps):
                 self.step += 1
@@ -105,7 +110,9 @@ class QLearning:
                     clock.tick(fps)
                     # exercise the action n times
                     self.game.make_action(action)
-                    reward += self.get_reward(state[0][-1], state[0][-4])
+                    next_position = self.game.player.get_current_position()
+                    reward += self.get_reward(state[0][-1], position, next_position, state[0][-4])
+                    position = next_position
                     # render window
                     text = reward, action
                     self.game.draw(self.game.MAP.gates[self.game.next_gate], True, text, False)
@@ -128,16 +135,14 @@ class QLearning:
                         self.align_target_model()
                         print("Target network aligned.")
                     state = next_state
+                    position = next_position
             if not run:
                 break
 
             epsilones.append(self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay))
             scores.append(score)
-
-            if episode % 20 == 0 and episode % 1500 != 0:
-                self.save(f"episode_{episode}", memory=False)
             
-            if episode % 20 != 0 and episode % 1500 == 0:
+            if episode % 20 == 0:
                 self.save(f"episode_{episode}", memory=True)
 
             print(f"Episode {episode} is done. Score: {score}, avg score: {np.mean(scores[max(0, episode - 100):(episode+1)])}")
@@ -149,16 +154,19 @@ class QLearning:
         self.memory.count()
         self.decay += 1
         if np.random.rand() <= self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay):
-                return random.randint(0, self.action_size - 1)
+            print("Random action!")
+            return random.randint(0, self.action_size - 1)
         
         q_values = self.q_network.predict(state, verbose=0)
         return np.argmax(q_values[0])
 
-    def get_reward(self, relative_distance_to_reward, relative_speed):
+    def get_reward(self, relative_distance_to_reward, current_position, next_position, relative_speed):
         collistion_punishment = -100
         gate_reward = -collistion_punishment / 10
 
         reward = -gate_reward * (relative_distance_to_reward) / 40 # + gate_reward * relative_speed
+        if current_position[0] == next_position[0] and current_position[1] == next_position[1]:
+            reward += collistion_punishment / 10
         if self.game.gate_collision():
             reward = gate_reward
         if self.game.wall_collision():
