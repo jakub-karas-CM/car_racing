@@ -3,11 +3,12 @@ from game import Game
 from q_learning import QLearning
 import path
 
-def testing(dir):
-    game = Game(path.MAPS / 'simpler')
-    agent = QLearning(game, 1, 1, 2, 0.6)
+def testing(dir, map = 'simpler'):
+    '''Testing of the trained AI.'''
+    game = Game(path.MAPS / map)
+    agent = QLearning(game, 1, 1, 1, 2, 0.6, 1) # those parameters are not important now
     agent.load(dir, True)
-    agent.min_epsilon = 0
+    agent.min_epsilon = 0 # we have to prevent the random actions, otherwise the test will not go well
     agent.max_epsilon = 0
     clock = pg.time.Clock()
     FPS = 60
@@ -21,10 +22,11 @@ def testing(dir):
         
         clock.tick(FPS)
 
-        state = game.get_state()
-        game.make_action(agent.get_action(state))
+        # these two lines are the core of the testing
+        state = game.get_state() # get state
+        game.make_action(agent.get_action(state)) # pass it to the NN and execute the best action
 
-        game.draw(game.MAP.gates[game.next_gate], True, True)
+        game.draw(game.MAP.gates[game.next_gate], True, None, True)
         
         if game.wall_collision():
             game.reset()
