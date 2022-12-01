@@ -42,3 +42,7 @@ python main.py
 ```
 
 Though be wary of the `testing` function, it requires a trained neural network in the `models` folder.
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
