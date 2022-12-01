@@ -3,6 +3,7 @@ import pygame as pg
 import path
 
 def manual_movement(map):
+    '''This function enables user to take control over the vehicle.'''
     game = Game(path.MAPS / map)
     clock = pg.time.Clock()
     FPS = 60
@@ -14,14 +15,13 @@ def manual_movement(map):
                 run = False
                 break
         
-        clock.tick(FPS)
+        clock.tick(FPS) # syncing up program and display clock
 
         game.get_state()
         game.move_player()
 
         game.draw(game.MAP.gates[game.next_gate], True, None, True)
                 
-        # print((state, action))
         if game.wall_collision():
             game.reset()
         game.gate_collision()
