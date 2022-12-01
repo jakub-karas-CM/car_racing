@@ -9,7 +9,7 @@ from car import CarActions
 if __name__ == "__main__":
     '''Uncomment a function'''
     logger = logging.getLogger(__name__)
-    logging.basicConfig(format = '\n%(asctime)s %(module)s %(levelname)s: %(message)s', datefmt = '%I:%M:%S %p', level = logging.DEBUG)
+    logging.basicConfig(format = '%(asctime)s %(module)s %(levelname)s: %(message)s', datefmt = '%I:%M:%S %p', level = logging.DEBUG)
     # manual_movement('simpler')
     # auto_training(50000, model_only=False)
     # testing('episode_1060')
